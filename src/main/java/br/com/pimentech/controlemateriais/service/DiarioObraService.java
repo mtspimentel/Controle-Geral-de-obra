@@ -33,10 +33,15 @@ public final class DiarioObraService {
         if (id != null && sameDay != null && !id.equals(sameDay.id())) {
             throw new ValidationException("Já existe um diário registrado para esta data.");
         }
+        DiarioObra previous = id == null ? null : repository.findByObraId(obraId).stream()
+                .filter(item -> id.equals(item.id())).findFirst()
+                .orElseThrow(() -> new ValidationException("O RDO selecionado não pertence a esta obra."));
+        if (previous != null && !previous.efetivo().equals(empty(efetivo)) && repository.hasLinkedProduction(id))
+            throw new ValidationException("O efetivo deste RDO já está vinculado ao cronograma. Edite ou exclua os apontamentos antes de alterá-lo.");
         Instant now = Instant.now();
         DiarioObra diario = new DiarioObra(id != null ? id : sameDay == null ? null : sameDay.id(), obraId, data,
                 atividades.trim(), empty(efetivo), empty(equipamentos), empty(clima), empty(observacoes), empty(intercorrencias),
-                sameDay == null ? now : sameDay.createdAt(), now);
+                previous != null ? previous.createdAt() : sameDay == null ? now : sameDay.createdAt(), now);
         if (diario.id() == null) {
             repository.insert(diario);
             return repository.findByObraIdAndData(obraId, data.toString()).orElseThrow(

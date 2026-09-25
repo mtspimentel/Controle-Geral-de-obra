@@ -16,7 +16,7 @@ public final class DatabaseManager implements AutoCloseable {
 
     private final Path rootDirectory;
     private final Path databasePath;
-    private final List<Migration> migrations = List.of(new SchemaMigration(), new DemoDataMigration(), new OptionalSupplierMigration(), new PedidoStatusMigration(), new MaterialTypeMigration(), new AlmoxarifadoMigration(), new DiarioObraMigration(), new DiarioObraEquipamentosMigration());
+    private final List<Migration> migrations = List.of(new SchemaMigration(), new DemoDataMigration(), new OptionalSupplierMigration(), new PedidoStatusMigration(), new MaterialTypeMigration(), new AlmoxarifadoMigration(), new DiarioObraMigration(), new DiarioObraEquipamentosMigration(), new EquipmentRentalMigration(), new PlanejamentoMigration(), new CronogramaMensalMigration(), new CronogramaExecucaoMigration(), new CronogramaProducaoMigration(), new PlanejamentoDiarioMigration(), new FrentesObraMigration(), new FrentesEntreAreasMigration());
 
     public DatabaseManager() {
         this(Path.of(System.getProperty("user.dir")));

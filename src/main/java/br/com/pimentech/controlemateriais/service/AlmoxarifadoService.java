@@ -43,23 +43,29 @@ public final class AlmoxarifadoService {
             EstoqueMovimentacao retirada = entry.getValue();
             double saldo = retirada.quantidade() - devolvido.getOrDefault(entry.getKey(), 0D);
             return new RetiradaPendente(entry.getKey(), retirada.materialId(), retirada.codigoMaterial(),
-                    retirada.descricaoMaterial(), retirada.unidade(), saldo, retirada.retirante(), retirada.servico());
+                    retirada.descricaoMaterial(), retirada.unidade(), saldo, retirada.retirante(), retirada.servico(),
+                    retirada.empresaLocataria());
         }).filter(item -> item.quantidade() > 0).toList();
     }
 
     public void registrarEntrada(long obraId, long materialId, double quantidade, String responsavel, String observacao) {
-        registrar(obraId, materialId, quantidade, TipoMovimentacaoEstoque.ENTRADA, responsavel, "", "", observacao, "", quantidade);
+        registrar(obraId, materialId, quantidade, TipoMovimentacaoEstoque.ENTRADA, responsavel, "", "", "", observacao, "", quantidade);
     }
 
     public void registrarSaida(long obraId, long materialId, double quantidade, String retirante, String servico,
                                String responsavel, String observacao) {
-        registrar(obraId, materialId, quantidade, TipoMovimentacaoEstoque.SAIDA, responsavel, retirante, servico, observacao, "", -quantidade);
+        registrar(obraId, materialId, quantidade, TipoMovimentacaoEstoque.SAIDA, responsavel, retirante, servico, "", observacao, "", -quantidade);
     }
 
     public void registrarRetirada(long obraId, long materialId, double quantidade, String retirante, String servico,
                                   String responsavel, String observacao) {
+        registrarRetirada(obraId, materialId, quantidade, retirante, servico, responsavel, "", observacao);
+    }
+
+    public void registrarRetirada(long obraId, long materialId, double quantidade, String retirante, String servico,
+                                  String responsavel, String empresaLocataria, String observacao) {
         registrar(obraId, materialId, quantidade, TipoMovimentacaoEstoque.RETIRADA, responsavel, retirante, servico,
-                observacao, UUID.randomUUID().toString(), -quantidade);
+                empresaLocataria, observacao, UUID.randomUUID().toString(), -quantidade);
     }
 
     public void registrarDevolucao(long obraId, String referencia, double quantidade, String conferente, String observacao) {
@@ -74,11 +80,11 @@ public final class AlmoxarifadoService {
             throw new ValidationException("A devolução não pode ser maior que o saldo retirado: " + number(pendente.quantidade()));
         }
         registrar(obraId, pendente.materialId(), quantidade, TipoMovimentacaoEstoque.DEVOLUCAO, conferente,
-                pendente.retirante(), pendente.servico(), observacao, referencia, quantidade);
+                pendente.retirante(), pendente.servico(), pendente.empresaLocataria(), observacao, referencia, quantidade);
     }
 
     private void registrar(long obraId, long materialId, double quantidade, TipoMovimentacaoEstoque tipo,
-                           String responsavel, String retirante, String servico, String observacao,
+                           String responsavel, String retirante, String servico, String empresaLocataria, String observacao,
                            String referencia, double variacaoSaldo) {
         requirePositive(quantidade);
         requireText(responsavel, tipo == TipoMovimentacaoEstoque.DEVOLUCAO ? "Informe o conferente" : "Informe o responsável");
@@ -91,9 +97,15 @@ public final class AlmoxarifadoService {
         if (material.obraId() != obraId || !material.ativo()) {
             throw new ValidationException("O material não pertence à obra ativa.");
         }
+        if (tipo == TipoMovimentacaoEstoque.RETIRADA && material.tipo() == br.com.pimentech.controlemateriais.model.MaterialTipo.EQUIPAMENTO) {
+            if (Math.abs(quantidade - 1D) > 0.0000001D) {
+                throw new ValidationException("A retirada de um equipamento deve usar quantidade 1 e o código do equipamento selecionado.");
+            }
+            requireText(empresaLocataria, "Informe a empresa locatária do equipamento");
+        }
         EstoqueMovimentacao movimentacao = new EstoqueMovimentacao(null, obraId, materialId, material.codigo(),
                 material.descricao(), material.unidade(), LocalDateTime.now(), tipo, quantidade,
-                responsavel.trim(), empty(retirante), empty(servico), empty(observacao), empty(referencia));
+                responsavel.trim(), empty(retirante), empty(servico), empty(empresaLocataria), empty(observacao), empty(referencia));
         estoqueRepository.registrar(movimentacao, variacaoSaldo);
     }
 

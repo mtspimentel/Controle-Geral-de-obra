@@ -61,7 +61,10 @@ public final class RequisicoesController {
         Button editButton = new Button("Editar selecionada");
         editButton.getStyleClass().add("secondary-button");
         editButton.setOnAction(event -> editSelected());
-        HBox toolbar = new HBox(10, newButton, editButton);
+        Button sheetButton = new Button("Gerar folha");
+        sheetButton.getStyleClass().add("secondary-button");
+        sheetButton.setOnAction(event -> generateSheet());
+        HBox toolbar = new HBox(10, newButton, editButton, sheetButton);
         toolbar.setAlignment(Pos.CENTER_LEFT);
         configureTable();
         refresh();
@@ -105,6 +108,22 @@ public final class RequisicoesController {
             return;
         }
         openForm(selected);
+    }
+
+    private void generateSheet() {
+        Requisicao selected = table.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            UiAlerts.info("Folha de requisição", "Selecione uma requisição para gerar a folha.");
+            return;
+        }
+        try {
+            java.nio.file.Path file = context.folhaPedidoService().gerar(selected);
+            if (java.awt.Desktop.isDesktopSupported()) java.awt.Desktop.getDesktop().open(file.toFile());
+            UiAlerts.info("Folha de requisição", "Folha gerada em:\n" + file);
+        } catch (RuntimeException | java.io.IOException exception) {
+            UiAlerts.error("Folha de requisição", exception.getMessage() == null
+                    ? "Não foi possível gerar a folha." : exception.getMessage());
+        }
     }
 
     private void openForm(Requisicao existing) {
@@ -189,7 +208,7 @@ public final class RequisicoesController {
                 UiAlerts.info("Itens", "Esse material já foi adicionado.");
                 return;
             }
-            items.add(new RequisicaoItem(null, selected.id(), selected.descricao(), selected.unidade(), amount, null));
+            items.add(new RequisicaoItem(null, selected.id(), selected.codigo(), selected.descricao(), selected.unidade(), amount, null));
             quantity.clear();
         } catch (NumberFormatException exception) {
             UiAlerts.error("Quantidade inválida", "Informe uma quantidade maior que zero.");
@@ -203,11 +222,13 @@ public final class RequisicoesController {
         itemTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_ALL_COLUMNS);
         TableColumn<RequisicaoItem, String> description = new TableColumn<>("Material");
         description.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().materialDescricao()));
+        TableColumn<RequisicaoItem, String> code = new TableColumn<>("Código");
+        code.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().materialCodigo() == null ? "-" : cell.getValue().materialCodigo()));
         TableColumn<RequisicaoItem, String> unit = new TableColumn<>("Unidade");
         unit.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().unidade()));
         TableColumn<RequisicaoItem, String> amount = new TableColumn<>("Quantidade");
         amount.setCellValueFactory(cell -> new SimpleStringProperty(number(cell.getValue().quantidade())));
-        itemTable.getColumns().addAll(description, unit, amount);
+        itemTable.getColumns().addAll(code, description, unit, amount);
         return itemTable;
     }
 

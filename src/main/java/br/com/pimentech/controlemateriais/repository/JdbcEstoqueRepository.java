@@ -28,7 +28,7 @@ public final class JdbcEstoqueRepository implements EstoqueRepository {
              PreparedStatement statement = connection.prepareStatement("""
                      SELECT em.id, em.obra_id, em.material_id, m.codigo, m.descricao, m.unidade,
                             em.data_movimentacao, em.tipo, em.quantidade, em.responsavel,
-                            em.retirante, em.servico, em.observacao, em.referencia
+                            em.retirante, em.servico, em.empresa_locataria, em.observacao, em.referencia
                      FROM estoque_movimentacoes em
                      JOIN materiais m ON m.id = em.material_id
                      WHERE em.obra_id = ?
@@ -44,7 +44,7 @@ public final class JdbcEstoqueRepository implements EstoqueRepository {
                             SqliteConverters.localDateTime(result, "data_movimentacao"),
                             TipoMovimentacaoEstoque.valueOf(result.getString("tipo")), result.getDouble("quantidade"),
                             result.getString("responsavel"), result.getString("retirante"), result.getString("servico"),
-                            result.getString("observacao"), result.getString("referencia")));
+                            result.getString("empresa_locataria"), result.getString("observacao"), result.getString("referencia")));
                 }
                 return movimentacoes;
             }
@@ -75,8 +75,8 @@ public final class JdbcEstoqueRepository implements EstoqueRepository {
             try (PreparedStatement statement = connection.prepareStatement("""
                     INSERT INTO estoque_movimentacoes
                         (obra_id, material_id, data_movimentacao, tipo, quantidade, responsavel,
-                         retirante, servico, observacao, referencia)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         retirante, servico, empresa_locataria, observacao, referencia)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """)) {
                 statement.setLong(1, movimentacao.obraId());
                 statement.setLong(2, movimentacao.materialId());
@@ -86,8 +86,9 @@ public final class JdbcEstoqueRepository implements EstoqueRepository {
                 statement.setString(6, movimentacao.responsavel());
                 statement.setString(7, movimentacao.retirante());
                 statement.setString(8, movimentacao.servico());
-                statement.setString(9, movimentacao.observacao());
-                statement.setString(10, movimentacao.referencia());
+                statement.setString(9, movimentacao.empresaLocataria());
+                statement.setString(10, movimentacao.observacao());
+                statement.setString(11, movimentacao.referencia());
                 statement.executeUpdate();
             }
             return null;

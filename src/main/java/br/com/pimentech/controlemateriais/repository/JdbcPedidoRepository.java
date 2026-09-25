@@ -202,7 +202,7 @@ public final class JdbcPedidoRepository implements PedidoRepository {
         long pedidoId = result.getLong("id");
         List<PedidoItem> itens = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement("""
-                SELECT pi.id, pi.material_id, m.descricao, pi.unidade, pi.quantidade_solicitada,
+                SELECT pi.id, pi.material_id, m.codigo, m.descricao, pi.unidade, pi.quantidade_solicitada,
                        pi.quantidade_comprada, pi.quantidade_recebida, pi.quantidade_aceita,
                        pi.quantidade_pendente, pi.custo_unitario, pi.status,
                        (SELECT GROUP_CONCAT(ei.motivo_recusa, ' | ')
@@ -216,7 +216,7 @@ public final class JdbcPedidoRepository implements PedidoRepository {
             statement.setLong(1, pedidoId);
             try (ResultSet items = statement.executeQuery()) {
                 while (items.next()) {
-                    itens.add(new PedidoItem(items.getLong("id"), items.getLong("material_id"), items.getString("descricao"),
+                    itens.add(new PedidoItem(items.getLong("id"), items.getLong("material_id"), items.getString("codigo"), items.getString("descricao"),
                             items.getString("unidade"), items.getDouble("quantidade_solicitada"), items.getDouble("quantidade_comprada"),
                             items.getDouble("quantidade_recebida"), items.getDouble("quantidade_aceita"), items.getDouble("quantidade_pendente"),
                             items.getDouble("custo_unitario"), items.getString("status"), items.getString("motivo_pendencia")));

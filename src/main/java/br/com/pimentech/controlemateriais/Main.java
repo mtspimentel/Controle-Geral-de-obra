@@ -11,7 +11,7 @@ import javafx.stage.StageStyle;
 
 public final class Main extends Application {
 
-    private static final String APPLICATION_TITLE = "Planejamento Rio Claro | Obras e Almoxarifado";
+    private static final String APPLICATION_TITLE = "Controle Geral de Obra | Planejamento diário e almoxarifado";
 
     @Override
     public void start(Stage stage) {

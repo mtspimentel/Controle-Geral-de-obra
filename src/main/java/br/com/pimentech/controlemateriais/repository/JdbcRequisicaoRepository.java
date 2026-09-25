@@ -141,7 +141,7 @@ public final class JdbcRequisicaoRepository implements RequisicaoRepository {
         long requisicaoId = result.getLong("id");
         List<RequisicaoItem> itens = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement("""
-                SELECT ri.id, ri.material_id, m.descricao, ri.unidade, ri.quantidade, ri.observacao
+                SELECT ri.id, ri.material_id, m.codigo, m.descricao, ri.unidade, ri.quantidade, ri.observacao
                 FROM requisicao_itens ri JOIN materiais m ON m.id = ri.material_id
                 WHERE ri.requisicao_id = ? ORDER BY ri.id
                 """)) {
@@ -149,7 +149,7 @@ public final class JdbcRequisicaoRepository implements RequisicaoRepository {
             try (ResultSet items = statement.executeQuery()) {
                 while (items.next()) {
                     itens.add(new RequisicaoItem(items.getLong("id"), items.getLong("material_id"),
-                            items.getString("descricao"), items.getString("unidade"), items.getDouble("quantidade"),
+                            items.getString("codigo"), items.getString("descricao"), items.getString("unidade"), items.getDouble("quantidade"),
                             items.getString("observacao")));
                 }
             }

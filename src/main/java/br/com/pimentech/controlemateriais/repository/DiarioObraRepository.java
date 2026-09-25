@@ -10,6 +10,7 @@ public interface DiarioObraRepository {
     List<DiarioObra> findByObraId(long obraId);
 
     Optional<DiarioObra> findByObraIdAndData(long obraId, String data);
+    boolean hasLinkedProduction(long diarioId);
 
     long insert(DiarioObra diario);
 

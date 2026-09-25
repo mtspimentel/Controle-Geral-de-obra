@@ -58,6 +58,15 @@ public final class JdbcDiarioObraRepository implements DiarioObraRepository {
     }
 
     @Override
+    public boolean hasLinkedProduction(long diarioId) {
+        try (Connection connection = database.getConnection();
+             PreparedStatement statement = connection.prepareStatement("SELECT EXISTS(SELECT 1 FROM cronograma_producao WHERE diario_obra_id = ?)")) {
+            statement.setLong(1, diarioId);
+            try (ResultSet result = statement.executeQuery()) { return result.next() && result.getInt(1) == 1; }
+        } catch (SQLException exception) { throw new PersistenceException("Não foi possível conferir o efetivo vinculado ao cronograma", exception); }
+    }
+
+    @Override
     public long insert(DiarioObra diario) {
         return database.inTransaction(connection -> {
             try (PreparedStatement statement = connection.prepareStatement("""

@@ -15,6 +15,7 @@ public record EstoqueMovimentacao(
         String responsavel,
         String retirante,
         String servico,
+        String empresaLocataria,
         String observacao,
         String referencia
 ) {

@@ -165,6 +165,69 @@
     -fx-font-size: 11px;
 }
 
+.metric-positive { -fx-text-fill: #218653; }
+.metric-negative { -fx-text-fill: #c94b4b; }
+
+.planning-panel {
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+    -fx-border-color: #e3e8ef;
+    -fx-border-radius: 10px;
+    -fx-padding: 16px;
+}
+
+.planning-month-cell {
+    -fx-background-color: #f7f9fc;
+    -fx-background-radius: 7px;
+    -fx-padding: 8px;
+}
+
+.planning-month-cell .text-field {
+    -fx-font-size: 14px;
+    -fx-alignment: CENTER-RIGHT;
+}
+
+.planning-month-scroll,
+.planning-month-scroll > .viewport {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.planning-editor-total {
+    -fx-text-fill: #17365d;
+    -fx-font-size: 17px;
+    -fx-font-weight: bold;
+}
+
+.planning-total {
+    -fx-text-fill: #17365d;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.planning-summary-row {
+    -fx-background-color: #e8f0f8;
+    -fx-font-weight: bold;
+}
+
+.planning-summary-row .table-cell {
+    -fx-text-fill: #17365d;
+}
+
+.planning-project-details {
+    -fx-background-color: #eaf2fb;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 14px;
+    -fx-text-fill: #17365d;
+    -fx-font-size: 13px;
+}
+
+.planning-week-label {
+    -fx-font-size: 10px;
+    -fx-text-fill: #4c6077;
+    -fx-alignment: center;
+}
+
 .panel-title {
     -fx-text-fill: #172235;
     -fx-font-size: 16px;

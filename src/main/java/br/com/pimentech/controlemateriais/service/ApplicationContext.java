@@ -17,6 +17,9 @@ import br.com.pimentech.controlemateriais.repository.EstoqueRepository;
 import br.com.pimentech.controlemateriais.repository.JdbcEstoqueRepository;
 import br.com.pimentech.controlemateriais.repository.DiarioObraRepository;
 import br.com.pimentech.controlemateriais.repository.JdbcDiarioObraRepository;
+import br.com.pimentech.controlemateriais.repository.JdbcPlanejamentoRepository;
+import br.com.pimentech.controlemateriais.repository.JdbcPlanejamentoDiarioRepository;
+import br.com.pimentech.controlemateriais.repository.JdbcFrentesRepository;
 import br.com.pimentech.controlemateriais.repository.EntregaRepository;
 import br.com.pimentech.controlemateriais.repository.MaterialRepository;
 import br.com.pimentech.controlemateriais.repository.ObraRepository;
@@ -48,6 +51,9 @@ public final class ApplicationContext implements AutoCloseable {
     private final FolhaPedidoService folhaPedidoService;
     private final AlmoxarifadoService almoxarifadoService;
     private final DiarioObraService diarioObraService;
+    private final PlanejamentoService planejamentoService;
+    private final PlanejamentoDiarioService planejamentoDiarioService;
+    private final FrentesService frentesService;
 
     public ApplicationContext() {
         databaseManager = new DatabaseManager();
@@ -76,6 +82,9 @@ public final class ApplicationContext implements AutoCloseable {
         almoxarifadoService = new AlmoxarifadoService(estoqueRepository, materialRepository);
         DiarioObraRepository diarioRepository = new JdbcDiarioObraRepository(databaseManager);
         diarioObraService = new DiarioObraService(diarioRepository);
+        planejamentoService = new PlanejamentoService(new JdbcPlanejamentoRepository(databaseManager), diarioObraService);
+        planejamentoDiarioService = new PlanejamentoDiarioService(new JdbcPlanejamentoDiarioRepository(databaseManager), materialRepository);
+        frentesService = new FrentesService(new JdbcFrentesRepository(databaseManager), planejamentoDiarioService);
     }
 
     public DatabaseManager databaseManager() {
@@ -156,6 +165,18 @@ public final class ApplicationContext implements AutoCloseable {
 
     public DiarioObraService diarioObraService() {
         return diarioObraService;
+    }
+
+    public PlanejamentoService planejamentoService() {
+        return planejamentoService;
+    }
+
+    public PlanejamentoDiarioService planejamentoDiarioService() {
+        return planejamentoDiarioService;
+    }
+
+    public FrentesService frentesService() {
+        return frentesService;
     }
 
     @Override

@@ -59,7 +59,7 @@ public final class PedidoService {
     }
 
     private PedidoItem toPedidoItem(RequisicaoItem item) {
-        return new PedidoItem(null, item.materialId(), item.materialDescricao(), item.unidade(), item.quantidade(),
+        return new PedidoItem(null, item.materialId(), item.materialCodigo(), item.materialDescricao(), item.unidade(), item.quantidade(),
                 item.quantidade(), 0, 0, item.quantidade(), 0, "PENDENTE", null);
     }
 

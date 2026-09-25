@@ -32,8 +32,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
+import java.text.Normalizer;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 public final class AlmoxarifadoController {
 
@@ -48,6 +50,7 @@ public final class AlmoxarifadoController {
     private final Label pendingCount = new Label("0");
     private final Label movementCount = new Label("0");
     private final TextField search = new TextField();
+    private final ComboBox<MaterialTipo> typeFilter = new ComboBox<>();
     private MaterialTipo selectedType = MaterialTipo.MATERIAL;
     private TableColumn<Material, String> remainingColumn;
     private Node view;
@@ -112,13 +115,27 @@ public final class AlmoxarifadoController {
         help.getStyleClass().add("page-subtitle");
         Button newMaterial = actionButton("+ Novo material", "primary-button", () -> openForm(null));
         Button editMaterial = actionButton("Editar selecionado", "secondary-button", this::editSelected);
-        HBox toolbar = new HBox(10, search, newMaterial, editMaterial);
+        configureTypeFilter();
+        HBox toolbar = new HBox(10, search, typeFilter, newMaterial, editMaterial);
         toolbar.setAlignment(Pos.CENTER_LEFT);
         toolbar.getStyleClass().add("control-toolbar");
-        TabPane typeTabs = createTypeTabs();
         VBox.setVgrow(stockTable, Priority.ALWAYS);
-        section.getChildren().addAll(heading, help, toolbar, typeTabs, stockTable);
+        section.getChildren().addAll(heading, help, toolbar, stockTable);
         return section;
+    }
+
+    private void configureTypeFilter() {
+        if (!typeFilter.getItems().isEmpty()) return;
+        typeFilter.setItems(FXCollections.observableArrayList(MaterialTipo.values()));
+        typeFilter.setValue(selectedType);
+        typeFilter.setPromptText("Filtrar por tipo");
+        typeFilter.setPrefWidth(170);
+        typeFilter.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null) return;
+            selectedType = newValue;
+            updateRemainingColumn();
+            refresh();
+        });
     }
 
     private Node createMovementsSection() {
@@ -180,24 +197,6 @@ public final class AlmoxarifadoController {
         updateRemainingColumn();
     }
 
-    private TabPane createTypeTabs() {
-        TabPane tabs = new TabPane();
-        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        for (MaterialTipo type : MaterialTipo.values()) {
-            Tab tab = new Tab(type.label());
-            tab.setUserData(type);
-            tabs.getTabs().add(tab);
-        }
-        tabs.getSelectionModel().select(selectedType.ordinal());
-        tabs.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) -> {
-            if (newTab == null) return;
-            selectedType = (MaterialTipo) newTab.getUserData();
-            updateRemainingColumn();
-            refresh();
-        });
-        return tabs;
-    }
-
     private void configureHistoryTable() {
         if (!historyTable.getColumns().isEmpty()) return;
         historyTable.setPlaceholder(new Label("Nenhuma movimentação registrada"));
@@ -210,7 +209,8 @@ public final class AlmoxarifadoController {
                 column("Quantidade", item -> number(item.quantidade())),
                 column("Responsável", EstoqueMovimentacao::responsavel),
                 column("Retirante", item -> displayValue(item.retirante())),
-                column("Serviço", item -> displayValue(item.servico())));
+                column("Serviço", item -> displayValue(item.servico())),
+                column("Empresa locatária", item -> displayValue(item.empresaLocataria())));
     }
 
     private void configurePendingTable() {
@@ -222,7 +222,8 @@ public final class AlmoxarifadoController {
                 column("Material", RetiradaPendente::descricaoMaterial),
                 column("Pendente", item -> number(item.quantidade()) + " " + item.unidade()),
                 column("Retirante", RetiradaPendente::retirante),
-                column("Serviço", RetiradaPendente::servico));
+                column("Serviço", RetiradaPendente::servico),
+                column("Empresa locatária", item -> displayValue(item.empresaLocataria())));
     }
 
     private void refresh() {
@@ -235,8 +236,9 @@ public final class AlmoxarifadoController {
             return;
         }
         List<Material> allMaterials = context.materialService().listar(obra.id());
-        List<Material> materials = context.materialService().pesquisar(obra.id(), search.getText()).stream()
+        List<Material> materials = allMaterials.stream()
                 .filter(item -> item.tipo() == selectedType)
+                .filter(item -> matchesSearch(item, search.getText()))
                 .toList();
         List<EstoqueMovimentacao> history = context.almoxarifadoService().listarMovimentacoes(obra.id());
         List<RetiradaPendente> pending = context.almoxarifadoService().listarRetiradasPendentes(obra.id());
@@ -245,6 +247,22 @@ public final class AlmoxarifadoController {
         pendingTable.setItems(FXCollections.observableArrayList(pending));
         setIndicators(allMaterials.size(), (int) allMaterials.stream().filter(item -> item.estoqueAtual() <= item.estoqueMinimo()).count(),
                 pending.size(), history.size());
+    }
+
+    private boolean matchesSearch(Material material, String text) {
+        String term = normalize(text);
+        if (term.isBlank()) return true;
+        return normalize(material.codigo()).contains(term)
+                || normalize(material.descricao()).contains(term)
+                || normalize(material.categoria()).contains(term);
+    }
+
+    private String normalize(String value) {
+        if (value == null) return "";
+        return Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .trim();
     }
 
     private void setIndicators(int stock, int low, int pending, int movements) {
@@ -369,21 +387,33 @@ public final class AlmoxarifadoController {
         TextField quantity = new TextField();
         TextField requester = new TextField();
         TextField service = new TextField();
+        TextField rentalCompany = new TextField();
         TextField responsible = new TextField();
         TextField note = new TextField();
+        if (withdrawal) {
+            rentalCompany.setPromptText("Obrigatório para equipamento");
+            rentalCompany.setDisable(!isEquipment(material.getValue()));
+            material.valueProperty().addListener((observable, oldValue, newValue) -> {
+                boolean equipment = isEquipment(newValue);
+                rentalCompany.setDisable(!equipment);
+                if (!equipment) rentalCompany.clear();
+            });
+        }
         GridPane grid = formGrid();
-        addRow(grid, 0, "Material *", material);
-        addRow(grid, 1, "Quantidade *", quantity);
-        addRow(grid, 2, "Retirante *", requester);
-        addRow(grid, 3, "Serviço *", service);
-        addRow(grid, 4, "Liberado por *", responsible);
-        addRow(grid, 5, "Observação", note);
+        int row = 0;
+        addRow(grid, row++, withdrawal ? "Equipamento/material *" : "Material *", material);
+        addRow(grid, row++, "Quantidade *", quantity);
+        addRow(grid, row++, "Retirante *", requester);
+        addRow(grid, row++, "Serviço *", service);
+        if (withdrawal) addRow(grid, row++, "Empresa locatária", rentalCompany);
+        addRow(grid, row++, "Liberado por *", responsible);
+        addRow(grid, row, "Observação", note);
         dialog.getDialogPane().setContent(grid);
         ButtonType save = saveButton(dialog);
         installValidation(dialog, save, () -> {
             if (withdrawal) {
                 context.almoxarifadoService().registrarRetirada(obra.id(), selectedMaterial(material), decimal(quantity),
-                        requester.getText(), service.getText(), responsible.getText(), note.getText());
+                        requester.getText(), service.getText(), responsible.getText(), rentalCompany.getText(), note.getText());
             } else {
                 context.almoxarifadoService().registrarSaida(obra.id(), selectedMaterial(material), decimal(quantity),
                         requester.getText(), service.getText(), responsible.getText(), note.getText());
@@ -412,7 +442,7 @@ public final class AlmoxarifadoController {
         });
         withdrawal.getSelectionModel().selectFirst();
         GridPane grid = formGrid();
-        addRow(grid, 0, "Retirada *", withdrawal);
+        addRow(grid, 0, "Código/equipamento *", withdrawal);
         addRow(grid, 1, "Quantidade *", quantity);
         addRow(grid, 2, "Conferente *", responsible);
         addRow(grid, 3, "Observação", note);
@@ -477,6 +507,10 @@ public final class AlmoxarifadoController {
     private long selectedMaterial(ComboBox<Material> combo) {
         if (combo.getValue() == null) throw new ValidationException("Selecione um material.");
         return combo.getValue().id();
+    }
+
+    private boolean isEquipment(Material material) {
+        return material != null && material.tipo() == MaterialTipo.EQUIPAMENTO;
     }
 
     private GridPane formGrid() {

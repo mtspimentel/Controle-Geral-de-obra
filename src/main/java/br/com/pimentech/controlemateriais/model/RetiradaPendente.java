@@ -8,11 +8,13 @@ public record RetiradaPendente(
         String unidade,
         double quantidade,
         String retirante,
-        String servico
+        String servico,
+        String empresaLocataria
 ) {
     @Override
     public String toString() {
         return codigoMaterial + " - " + descricaoMaterial + " | " + quantidade + " " + unidade
-                + " | " + retirante + " | " + servico;
+                + " | " + retirante + " | " + servico
+                + (empresaLocataria == null || empresaLocataria.isBlank() ? "" : " | " + empresaLocataria);
     }
 }
