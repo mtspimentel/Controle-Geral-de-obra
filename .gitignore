@@ -1,0 +1,40 @@
+### IntelliJ IDEA ###
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+.kotlin
+
+### Eclipse ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+# Dados locais e artefatos gerados pela aplicação
+/data/
+/backup/
+/exports/
+/logs/
+/.codex-build/
+/target/
+/.idea/
+*.iml
+
+### Mac OS ###
+.DS_Store
